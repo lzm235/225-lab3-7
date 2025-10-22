@@ -3,10 +3,10 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIALS_ID = 'roseaw-dockerhub'
-        DOCKER_IMAGE = 'cithit/roseaw'                                                                    //<------your MiamiID
+        DOCKER_IMAGE = 'liz227/lab3'                                                                    //<------your MiamiID
         IMAGE_TAG = "build-${BUILD_NUMBER}"
-        GITHUB_URL = 'https://github.com/miamioh-cit/225-lab3-7.git'                                    //<------your MiamiID
-        KUBECONFIG = credentials('roseaw-225')                                                         //<------your MiamiID
+        GITHUB_URL = 'https://github.com/lzm235/225-lab3-7.git'                                    //<------your MiamiID
+        KUBECONFIG = credentials('liz227-225')                                                         //<------your MiamiID
     }
 
     stages {

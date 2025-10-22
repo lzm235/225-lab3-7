@@ -6,7 +6,7 @@ pipeline {
         DOCKER_IMAGE = 'liz227/lab3'                                                                    //<------your MiamiID
         IMAGE_TAG = "build-${BUILD_NUMBER}"
         GITHUB_URL = 'https://github.com/lzm235/225-lab3-7.git'                                    //<------your MiamiID
-        KUBECONFIG = credentials('liz227-225')                                                         //<------your MiamiID
+        KUBECONFIG = credentials('liz227-dockerhub')                                                         //<------your MiamiID
     }
 
     stages {

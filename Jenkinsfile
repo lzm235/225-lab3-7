@@ -2,11 +2,11 @@ pipeline {
     agent any 
 
     environment {
-        DOCKER_CREDENTIALS_ID = 'roseaw-dockerhub'
+        DOCKER_CREDENTIALS_ID = 'liz227-dockerhub'
         DOCKER_IMAGE = 'liz227/lab3'                                                                    //<------your MiamiID
         IMAGE_TAG = "build-${BUILD_NUMBER}"
         GITHUB_URL = 'https://github.com/lzm235/225-lab3-7.git'                                    //<------your MiamiID
-        KUBECONFIG = credentials('liz227-dockerhub')                                                         //<------your MiamiID
+        KUBECONFIG = credentials('liz227-225')                                                         //<------your MiamiID
     }
 
     stages {

@@ -61,12 +61,18 @@ pipeline {
         }
 
         stage("Run Acceptance Tests") {
-            steps {
-                script {
-                    sh 'docker stop qa-tests || true'
-                    sh 'docker rm qa-tests || true'
-                    sh 'docker build -t qa-tests -f Dockerfile.test .'
-                    sh 'docker run qa-tests'
+    steps {
+        script {
+            docker.withRegistry('https://index.docker.io/v1/', "${liz227-dockerhub}") {
+                sh 'docker stop qa-tests || true'
+                sh 'docker rm qa-tests || true'
+                sh 'docker build -t qa-tests -f Dockerfile.test .'
+                sh 'docker run qa-tests'
+            }
+        }
+    }
+}
+
                 }
             }
         }

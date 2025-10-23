@@ -1,14 +1,12 @@
-
-
 pipeline {
     agent any 
 
     environment {
         DOCKER_CREDENTIALS_ID = 'liz227-dockerhub'
-        DOCKER_IMAGE = 'liz227/lab3'                                                                    //<------your MiamiID
+        DOCKER_IMAGE = 'liz227/lab3'                                     
         IMAGE_TAG = "build-${BUILD_NUMBER}"
-        GITHUB_URL = 'https://github.com/lzm235/225-lab3-7.git'                                    //<------your MiamiID
-        KUBECONFIG = credentials('liz227-225')                                                         //<------your MiamiID
+        GITHUB_URL = 'https://github.com/lzm235/225-lab3-7.git'
+        KUBECONFIG = credentials('liz227-225') 
     }
 
     stages {
@@ -50,36 +48,29 @@ pipeline {
         stage('Deploy to Dev Environment') {
             steps {
                 script {
-                    // Update deployment-dev.yaml with the new image tag
+                    def kubeConfig = readFile(KUBECONFIG)
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
                     sh "kubectl apply -f deployment-dev.yaml"
-
-                    // 🔥 Force restart the dev deployment to ensure new image loads
-                    sh "kubectl rollout restart deployment/dev-deployment"
                 }
             }
         }
 
         stage("Run Acceptance Tests") {
-    steps {
-        script {
-            docker.withRegistry('https://index.docker.io/v1/', "${liz227-dockerhub}") {
-                sh 'docker stop qa-tests || true'
-                sh 'docker rm qa-tests || true'
-                sh 'docker build -t qa-tests -f Dockerfile.test .'
-                sh 'docker run qa-tests'
-            }
-        }
-    }
-}
-
+            steps {
+                script {
+                    // ✅ 这里加上 Docker 登录包裹，防止 python:3.9 拉取失败
+                    docker.withRegistry('https://index.docker.io/v1/', "${liz227_dockerhub}") {
+                        sh 'docker stop qa-tests || true'
+                        sh 'docker rm qa-tests || true'
+                        sh 'docker build -t qa-tests -f Dockerfile.test .'
+                        sh 'docker run qa-tests'
+                    }
                 }
             }
         }
-        
+
         stage("Run Security Checks") {
             steps {
-                // ### Change IP to your cluster IP ###
                 sh 'docker pull public.ecr.aws/portswigger/dastardly:latest'
                 sh '''
                     docker run --user $(id -u) -v ${WORKSPACE}:${WORKSPACE}:rw \
@@ -89,13 +80,12 @@ pipeline {
                 '''
             }
         }
-        
+
         stage('Deploy to Prod Environment') {
             steps {
                 script {
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-prod.yaml"
                     sh "kubectl apply -f deployment-prod.yaml"
-                    sh "kubectl rollout restart deployment/prod-deployment"
                 }
             }
         }
@@ -108,7 +98,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             junit testResults: 'dastardly-report.xml', skipPublishingChecks: true

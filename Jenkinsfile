@@ -1,3 +1,5 @@
+
+
 pipeline {
     agent any 
 
@@ -35,7 +37,6 @@ pipeline {
             }
         }
 
-
         stage('Push Docker Image') {
             steps {
                 script {
@@ -49,16 +50,17 @@ pipeline {
         stage('Deploy to Dev Environment') {
             steps {
                 script {
-                    // Set up Kubernetes configuration using the specified KUBECONFIG
-                    def kubeConfig = readFile(KUBECONFIG)
-                    // Update deployment-dev.yaml to use the new image tag
+                    // Update deployment-dev.yaml with the new image tag
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
                     sh "kubectl apply -f deployment-dev.yaml"
+
+                    // 🔥 Force restart the dev deployment to ensure new image loads
+                    sh "kubectl rollout restart deployment/dev-deployment"
                 }
             }
         }
 
-         stage("Run Acceptance Tests") {
+        stage("Run Acceptance Tests") {
             steps {
                 script {
                     sh 'docker stop qa-tests || true'
@@ -69,9 +71,9 @@ pipeline {
             }
         }
         
-        stage ("Run Security Checks") {
+        stage("Run Security Checks") {
             steps {
-                //                                                                 ###change the IP address in this section to your cluster IP address!!!!####
+                // ### Change IP to your cluster IP ###
                 sh 'docker pull public.ecr.aws/portswigger/dastardly:latest'
                 sh '''
                     docker run --user $(id -u) -v ${WORKSPACE}:${WORKSPACE}:rw \
@@ -82,17 +84,16 @@ pipeline {
             }
         }
         
-       stage('Deploy to Prod Environment') {
+        stage('Deploy to Prod Environment') {
             steps {
                 script {
-                    // Set up Kubernetes configuration using the specified KUBECONFIG
-                    //sh "ls -la"
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-prod.yaml"
-                    sh "cd .."
                     sh "kubectl apply -f deployment-prod.yaml"
+                    sh "kubectl rollout restart deployment/prod-deployment"
                 }
             }
         }
+
         stage('Check Kubernetes Cluster') {
             steps {
                 script {
@@ -117,4 +118,3 @@ pipeline {
         }
     }
 }
-

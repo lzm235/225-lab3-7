@@ -1,12 +1,12 @@
 pipeline {
-    agent any 
+    agent any
 
     environment {
-        DOCKER_CREDENTIALS_ID = 'liz227-dockerhub'
-        DOCKER_IMAGE = "liz227\\/lab3"                                     
+        DOCKER_CREDENTIALS_ID = 'liz227_dockerhub'
+        DOCKER_IMAGE = """liz227/lab3"""               // ✅ 三重引号防止 Groovy 把 / 当除法
         IMAGE_TAG = "build-${BUILD_NUMBER}"
         GITHUB_URL = 'https://github.com/lzm235/225-lab3-7.git'
-        KUBECONFIG = credentials('liz227-225') 
+        KUBECONFIG = credentials('liz227-225')
     }
 
     stages {
@@ -29,7 +29,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry-1.docker.io', 'roseaw-dockerhub') {
-                        docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}", "-f Dockerfile.build .")
+                        sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -f Dockerfile.build ."
                     }
                 }
             }
@@ -39,7 +39,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
-                        docker.image("${DOCKER_IMAGE}:${IMAGE_TAG}").push()
+                        sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
                     }
                 }
             }
@@ -48,9 +48,9 @@ pipeline {
         stage('Deploy to Dev Environment') {
             steps {
                 script {
-                    def kubeConfig = readFile(KUBECONFIG)
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
                     sh "kubectl apply -f deployment-dev.yaml"
+                    sh "kubectl rollout restart deployment/dev-deployment"
                 }
             }
         }
@@ -58,13 +58,10 @@ pipeline {
         stage("Run Acceptance Tests") {
             steps {
                 script {
-                    // ✅ 这里加上 Docker 登录包裹，防止 python:3.9 拉取失败
-                    docker.withRegistry('https://index.docker.io/v1/', "${liz227-dockerhub}") {
-                        sh 'docker stop qa-tests || true'
-                        sh 'docker rm qa-tests || true'
-                        sh 'docker build -t qa-tests -f Dockerfile.test .'
-                        sh 'docker run qa-tests'
-                    }
+                    sh 'docker stop qa-tests || true'
+                    sh 'docker rm qa-tests || true'
+                    sh 'docker build -t qa-tests -f Dockerfile.test .'
+                    sh 'docker run qa-tests'
                 }
             }
         }
@@ -104,13 +101,10 @@ pipeline {
             junit testResults: 'dastardly-report.xml', skipPublishingChecks: true
         }
         success {
-            slackSend color: "good", message: "Build Completed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
-        }
-        unstable {
-            slackSend color: "warning", message: "Build Unstable: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+            slackSend color: "good", message: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
         }
         failure {
-            slackSend color: "danger", message: "Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+            slackSend color: "danger", message: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
         }
     }
 }

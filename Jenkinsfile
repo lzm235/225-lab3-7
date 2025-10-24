@@ -59,7 +59,7 @@ pipeline {
             steps {
                 script {
                     // ✅ 这里加上 Docker 登录包裹，防止 python:3.9 拉取失败
-                    docker.withRegistry('https://index.docker.io/v1/', "${liz227_dockerhub}") {
+                    docker.withRegistry('https://index.docker.io/v1/', "${liz227-dockerhub}") {
                         sh 'docker stop qa-tests || true'
                         sh 'docker rm qa-tests || true'
                         sh 'docker build -t qa-tests -f Dockerfile.test .'

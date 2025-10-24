@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIALS_ID = 'liz227-dockerhub'
-        DOCKER_IMAGE = "liz227/lab3"                                     
+        DOCKER_IMAGE = "liz227\\/lab3"                                     
         IMAGE_TAG = "build-${BUILD_NUMBER}"
         GITHUB_URL = 'https://github.com/lzm235/225-lab3-7.git'
         KUBECONFIG = credentials('liz227-225') 
